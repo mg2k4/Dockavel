@@ -1,0 +1,60 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# Documentation
+*.md
+docs/
+README.md
+CHANGELOG.md
+LICENSE
+
+# IDE & Editors
+.idea
+.vscode
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Laravel
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/app/public/*
+/.env
+/.env.*
+!/.env.example
+/public/hot
+/public/storage
+
+# Tests
+/tests/
+phpunit.xml
+.phpunit.result.cache
+
+# Build & Deployment
+/data/
+/logs/
+/docker-compose*.yaml
+/docker-compose*.yml
+/scripts/
+
+# Misc
+*.log
+*.cache
+.vagrant
+Vagrantfile

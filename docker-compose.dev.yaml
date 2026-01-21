@@ -1,0 +1,33 @@
+services:
+  app:
+    environment:
+      APP_ENV: development
+      APP_DEBUG: true
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./docker/php/dev-entrypoint.sh:/usr/local/bin/dev-entrypoint.sh:ro
+      - node_modules:/usr/src/app/node_modules
+    # Vite HMR in dev
+    command: ["bash", "/usr/local/bin/dev-entrypoint.sh"]
+
+  db:
+    ports:
+      - "3306:3306"
+
+  caching:
+    ports:
+      - "6379:6379"
+
+  webserver:
+    environment:
+      SERVER_NAME: localhost
+      SSL_CERT: /etc/nginx/ssl/cert.pem
+      SSL_KEY: /etc/nginx/ssl/key.pem
+    volumes:
+      - ./public:/usr/src/app/public
+      - ./logs/nginx:/var/log/nginx
+      - ./docker/nginx/dev-cert:/etc/nginx/ssl  # Generate certs (you can use mkcert)
+
+volumes:
+  node_modules:

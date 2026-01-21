@@ -1,0 +1,159 @@
+services:
+  app:
+    container_name: app_${APP_NAME}
+    image: ${APP_NAME}_php:latest
+    build:
+      context: .
+      dockerfile: ./docker/php/Dockerfile
+      args:
+        APP_ENV: ${APP_ENV:-local}
+    restart: unless-stopped
+    expose:
+      - 9000
+    volumes:
+      - .:/usr/src/app
+    depends_on:
+      db:
+        condition: service_healthy
+      caching:
+        condition: service_healthy
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "php -v > /dev/null 2>&1 && pidof php-fpm > /dev/null || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  webserver:
+    container_name: webserver_${APP_NAME}
+    build:
+      context: .
+      dockerfile: ./docker/nginx/Dockerfile
+    restart: unless-stopped
+    volumes:
+      - ./public:/usr/src/app/public
+      - ./storage/app/public:/usr/src/app/storage/app/public
+      - ./logs/nginx:/var/log/nginx
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      app:
+        condition: service_healthy
+    environment:
+      NGINX_FPM_HOST: app
+      NGINX_FPM_PORT: 9000
+      NGINX_ROOT: /usr/src/app/public
+      SERVER_NAME: ${SERVER_NAME:-localhost}
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    container_name: db_${APP_NAME}
+    image: mysql:8.0
+    restart: unless-stopped
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost --silent || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: --default-authentication-plugin=mysql_native_password
+
+  caching:
+    container_name: caching_${APP_NAME}
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes:
+      - redis-data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    networks:
+      - app_network
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDISCLI_AUTH: ${REDIS_PASSWORD}
+    command: sh -c 'redis-server /usr/local/etc/redis/redis.conf --requirepass "$$REDIS_PASSWORD"'
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+  supervisor:
+    container_name: supervisor_${APP_NAME}
+    image: ${APP_NAME}_php:latest
+    volumes:
+      - .:/usr/src/app
+      - ./docker/supervisor:/etc/supervisor/conf.d
+      - ./logs/supervisor:/var/log/supervisor
+    command: ["bash", "/usr/src/app/docker/supervisor/start.sh"]
+    depends_on:
+      app:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+      caching:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app_network
+    healthcheck:
+      test: ["CMD", "supervisorctl", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  scheduler:
+    container_name: scheduler_${APP_NAME}
+    image: ${APP_NAME}_php:latest
+    volumes:
+      - .:/usr/src/app
+    command: sh -c "while sleep 60; do php artisan schedule:run >> /dev/null 2>&1; done"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app_network
+
+  certbot:
+    image: certbot/certbot
+    container_name: certbot_${APP_NAME}
+    restart: no
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+    entrypoint: >
+      sh -c "trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $$!; done"
+
+networks:
+  app_network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local

@@ -22,3 +22,17 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# ========================================
+# Environment
+# ========================================
+.env.*
+!.env.example
+
+# ========================================
+# Docker & Deployment
+# ========================================
+/data/
+/backups/
+/logs/
+/docker/nginx/dev-cert/

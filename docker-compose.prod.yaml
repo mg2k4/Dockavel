@@ -1,0 +1,25 @@
+services:
+  app:
+    environment:
+      APP_ENV: production
+      APP_DEBUG: false
+    # Uncomment to limit resources (recommended for production)
+    # deploy:
+    #   resources:
+    #     limits:
+    #       cpus: '2'
+    #       memory: 2G
+    #     reservations:
+    #       cpus: '0.5'
+    #       memory: 512M
+
+  webserver:
+    environment:
+      SERVER_NAME: ${SERVER_NAME}
+      SSL_CERT: /etc/letsencrypt/live/${SERVER_NAME}/fullchain.pem
+      SSL_KEY: /etc/letsencrypt/live/${SERVER_NAME}/privkey.pem
+
+    volumes:
+      - ./data/certbot/conf:/etc/letsencrypt
+      - ./data/certbot/www:/var/www/certbot
+      - ./logs/nginx:/var/log/nginx
