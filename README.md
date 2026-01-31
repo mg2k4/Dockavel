@@ -17,7 +17,7 @@
 [![GitHub issues](https://img.shields.io/github/issues/mg2k4/Dockavel)](https://github.com/mg2k4/Dockavel/issues)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](https://github.com/mg2k4/Dockavel/pulls)
 
-[![Dockavel Introduction](https://img.youtube.com/vi/o-kj-T2QlXw/maxresdefault.jpg)](https://www.youtube.com/watch?v=o-kj-T2QlXw)
+[![Dockavel Introduction](https://img.youtube.com/vi/k3zHSbI0KQI/maxresdefault.jpg)](https://www.youtube.com/watch?v=k3zHSbI0KQI)
 
 *Click the image above to watch the installation demo*
 
