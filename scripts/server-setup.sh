@@ -246,8 +246,21 @@ print_success "SSH key generated for GitHub"
 # Step 9: Harden SSH Configuration
 print_step "9/11" "Hardening SSH configuration..."
 
+# Install OpenSSH if not present (minimal installations like Unraid)
+if [ ! -f /etc/ssh/sshd_config ]; then
+    print_warning "SSH server not found. Installing OpenSSH..."
+    apt-get update -qq
+    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server
+    systemctl enable ssh >/dev/null 2>&1
+    systemctl start ssh
+    print_success "OpenSSH server installed"
+fi
+
 # Backup SSH config
-cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)
+if [ -f /etc/ssh/sshd_config ]; then
+    cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup.$(date +%Y%m%d_%H%M%S)
+    print_success "SSH config backed up"
+fi
 
 # Remove all old directives (commented or not, with or without spaces)
 sed -i '/^[[:space:]]*#*[[:space:]]*PermitRootLogin/d' /etc/ssh/sshd_config
@@ -303,6 +316,15 @@ EOF
 fi
 
 # Test SSH configuration before proceeding
+print_info "Testing SSH configuration..."
+
+# Generate host keys if missing (fresh OpenSSH installation)
+if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then
+    print_warning "SSH host keys missing, generating..."
+    ssh-keygen -A >/dev/null 2>&1
+    print_success "SSH host keys generated"
+fi
+
 if ! sshd -t 2>/dev/null; then
     print_error "Error in SSH configuration!"
     print_warning "Restoring backup..."
