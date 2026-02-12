@@ -159,6 +159,12 @@ setup_env_file() {
     echo ""
 
     APP_NAME=$(prompt_input "Application name (container names)" "${APP_NAME:-laravel_app}")
+    # Docker requires lowercase image names
+    APP_NAME_ORIGINAL="$APP_NAME"
+    APP_NAME=$(echo "$APP_NAME" | tr '[:upper:]' '[:lower:]' | tr ' ' '_')
+    if [ "$APP_NAME" != "$APP_NAME_ORIGINAL" ]; then
+        print_warning "App name converted to lowercase for Docker: ${APP_NAME}"
+    fi
     sed -i "s/^APP_NAME=.*/APP_NAME=${APP_NAME}/" "$ENV_FILE"
 
     if [ "$ENVIRONMENT" == "prod" ]; then
