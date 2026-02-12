@@ -430,8 +430,16 @@ echo -e "   ${YELLOW}→ Then test the connection again${NC}\n"
 read -p "Have you tested and validated SSH connection with $DEPLOY_USER? (yes/no): " ssh_tested
 
 if [ "$ssh_tested" == "yes" ]; then
+    # Restart SSH (service name differs: 'ssh' on Ubuntu, 'sshd' on others)
     print_info "Restarting SSH service..."
-    systemctl restart sshd
+    if systemctl list-units --type=service | grep -q "sshd.service"; then
+        systemctl restart sshd
+    elif systemctl list-units --type=service | grep -q "ssh.service"; then
+        systemctl restart ssh
+    else
+        print_error "Could not find SSH service to restart!"
+        exit 1
+    fi
     print_success "SSH hardened and restarted"
 
     echo -e "\n${GREEN}════════════════════════════════════════════════════════${NC}"
