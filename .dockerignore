@@ -1,3 +1,9 @@
+# Ignore all hidden files by default to prevent accidental secret leaks.
+.*
+!.dockerignore
+!.gitignore
+!.env.example
+
 # Git
 .git
 .gitignore
